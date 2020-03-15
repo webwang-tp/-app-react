@@ -1,0 +1,27 @@
+.commentNav{
+    width: 100vw;
+    height: 1.0rem;
+    line-height: 1.0rem;
+    background-color: #00a2ed;
+    color: #fff;
+    display: flex;
+    flex-direction: row;
+    font-size: 0.3rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+.commentNav i{
+    margin: 0 0.3rem;
+}
+/* .commentNav{
+    margin-top: 1rem;
+    padding: 0 0.1rem;
+} */
+/* .my-accordion .pad .am-accordion-content-box {
+  padding: 10px;
+} */
+.am-accordion-header{
+    border-bottom: 1px solid #e5e5e5!important;
+}
