@@ -47,10 +47,16 @@ export var getcollectid = (state) => state.collect.collect
 export var getCollect = (state) => {
     const homenew = state.homenews.homenews
     const collect = state.collect.collect
-       return collect.map(item => {
-            var i = homenew.findIndex(i => i.id === item)
-            return homenew[i]
-        })
+    var arr = []
+    for (var i in homenew) {
+        for (var item in homenew[i].data) {
+            arr.push(homenew[i].data[item])
+        }
+    }
+    return collect.map(item => {
+        var i = arr.findIndex(i => i.id === item)
+        return arr[i]
+    })
 }
 
 export default reducer

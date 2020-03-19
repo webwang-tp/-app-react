@@ -4,7 +4,7 @@ import { Drawer, List, NavBar } from 'antd-mobile';
 import { latestNews } from '../../util/API'
 //改写成容器型组件
 import { connect } from "react-redux"
-import { gethomenew, requersthomenew, getbeforenew, requerstbeforenews, getflag, changeflag } from '../../store/home'
+import { gethomenew, requersthomenew, getflag, changeflag, requerstbeforenews, getnum, changenum } from '../../store/home'
 import './Index.css'
 import IndexNav from '../../components/IndexNav/IndexNav'
 import Newsitem from '../../components/Newsitem/Newsitem'
@@ -19,16 +19,16 @@ class Index extends Component {
             indexBanner: [],//轮播图数据
             newsDate: [],//新闻的数据
             open: false,//抽屉状态
+            indexnavtitle: '首页',//头部导航文字提示
         }
         this.newbox = React.createRef();
-        this.num = 1//过去新闻的天数
+        this.indexheader = React.createRef()
     }
-
+    num = 1
 
     componentDidMount() {
-        this.props.requesthomeNews()//redux获取数据
-        var n = this.getRequestTime(this.num)
-        this.props.requestbeforeNews(n)
+        this.props.requesthomeNews()//redux获取数据,今日新闻
+        this.props.requestbeforeNews(this.props.num)//过去新闻
         const { indexBanner, newsDate } = this.state
         latestNews({}).then(res => {
             for (var item of res.data.top_stories) {
@@ -44,45 +44,38 @@ class Index extends Component {
                 newsDate
             })
         })
-
         window.onscroll = () => {
             var scrollTop = document.body.scrollTop || document.documentElement.scrollTop;
             var cH = document.documentElement.clientHeight;
             var offsetH = document.documentElement.offsetHeight;
             if (scrollTop + cH + 120 >= offsetH && this.props.flag) {
                 this.props.requestflag(false)
-                this.num += 1
-                var n = this.getRequestTime(this.num)
-                this.props.requestbeforeNews(n)
+                this.props.requestnum(this.props.num + 1)
+                this.props.requestbeforeNews(this.props.num)
             }
-            // console.log(scrollTop,cH,offsetH)
+            // 头部导航文字提示
+            var titles = document.querySelectorAll('.homenewsitem');
+            var index = 0;
+            for (var i = 0; i < titles.length; i++) {
+                if (titles[i].getBoundingClientRect().top < 56){
+                   index=i;
+                    this.setState({
+                        ...this.state,
+                        indexnavtitle:index===0?'首页':titles[index].innerHTML
+                    })
+                }
+            }
         }
+    }
+    componentWillUnmount() {
+        window.onscroll = null;
     }
     onOpenChange() {
         this.setState({ open: !this.state.open });
     }
-    getRequestTime(n) {
-        var newdate = new Date().getTime();
-        var beforedate = newdate - (n - 1) * 24 * 60 * 60 * 1000;
-        var beforeDate = new Date(beforedate);
-        var beforeY = beforeDate.getFullYear();
-        var beforeM = (beforeDate.getMonth() + 1 + '').padStart(2, '0');
-        var beforeD = (beforeDate.getDate() + '').padStart(2, '0');
-        return beforeY + beforeM + beforeD
-    }
-    beforetime(data) {
-        console.log(data)
-        var d = new Date().getTime(parseInt(data));
-        console.log(d)
-        var D = new Date(d)
-        console.log(D)
-        var y = (D.getMonth() + 1 + '').padStart(2, '0');
-        var r = D.getDate()
-        return y + '月' + r + '日'
-    }
     render() {
-        const { homenews, beforenews } = this.props
-        console.log(beforenews)
+        const { homenews } = this.props
+        const { indexnavtitle}=this.state
         const sidebar = (
             <Sidebar></Sidebar>
         )
@@ -97,7 +90,7 @@ class Index extends Component {
                     open={this.state.open}
                     onOpenChange={this.onOpenChange.bind(this)}>
                     {/* 头部导航 */}
-                    <IndexNav onOpenChange={this.onOpenChange.bind(this)}></IndexNav>
+                    <IndexNav onOpenChange={this.onOpenChange.bind(this)} indexnavtitle={indexnavtitle} ref={this.indexheader}></IndexNav>
                     {/* 轮播图 */}
                     <div className='bannerwarp'>
                         {
@@ -115,19 +108,12 @@ class Index extends Component {
                     </div>
                     {/* 新闻列表 */}
                     <div className='indexnews' ref={this.newbox}>
-                        <p>今日新闻</p>
                         {
-                            this.state.newsDate.map(item => {
-                                return <Newsitem key={item.id} item={item}></Newsitem>
-                            })
-                        }
-                        {
-                            beforenews.map(item => {
-                                return <div key={item.date}>
-                                    {/* <p>{item.date}</p> */}
-                                    <p>{this.beforetime(item.date)}</p>
+                            homenews.map(item => {
+                                return <div key={item.title}>
+                                    <p className='homenewsitem'>{item.title}</p>
                                     {
-                                        item.stories.map(item => {
+                                        item.data.map(item => {
                                             return <Newsitem key={item.id} item={item}></Newsitem>
                                         })
                                     }
@@ -144,15 +130,16 @@ class Index extends Component {
 const mapStateToProps = (state) => {
     return {
         homenews: gethomenew(state),
-        beforenews: getbeforenew(state),
-        flag: getflag(state)
+        flag: getflag(state),
+        num: getnum(state)
     }
 }
 const mapDispatchToProps = (dispatch) => {
     return {
         requesthomeNews: () => dispatch(requersthomenew()),
-        requestbeforeNews: (time) => dispatch(requerstbeforenews(time)),
-        requestflag: (params) => dispatch(changeflag(params))
+        requestbeforeNews: (params) => dispatch(requerstbeforenews(params)),
+        requestflag: (params) => dispatch(changeflag(params)),
+        requestnum: (params) => dispatch(changenum(params))
     }
 }
 export default connect(mapStateToProps, mapDispatchToProps)(Index)
